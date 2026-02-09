@@ -7,6 +7,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     cmake \
     ninja-build \
+    nlohmann-json3-dev \
     pkg-config \
     wget \
     && rm -rf /var/lib/apt/lists/*
