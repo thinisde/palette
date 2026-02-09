@@ -1,0 +1,12 @@
+services:
+  palette:
+    container_name: palette-bot
+    platform: linux/amd64
+    build:
+      context: .
+      dockerfile: Dockerfile
+    env_file:
+      - .env
+    environment:
+      DISCORD_TOKEN: ${DISCORD_TOKEN}
+    restart: unless-stopped
