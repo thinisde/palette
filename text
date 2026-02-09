@@ -1,0 +1,6 @@
+Complementary: Complementary colors are two colors that are the complete opposite of each other on the color wheel. Complementary colors are used by many including graphic designers, painters, and other artists. Knowing the complementary color for a given color is useful because using them together creates a visual contrast which can really make a design pop!
+Shades: A shade is a concept of darkening a color. 
+Tints: A tint is a concept of lightening a color.
+Tones: A tone is a concept of adding gray to a color.
+Scheme: A monochromatic color scheme is based on a single color and contains both shades and tints of that color.
+Web Safe Color: A web safe color is a color that will not be dithered when shown on a web browser that only has 256-color support. Although this is not much of an issue in modern browsers today it is important to understand the history. A web safe color will always appear as intended across any device/browser. There are 216 colors that are considered web safe.

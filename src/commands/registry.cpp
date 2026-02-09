@@ -1,0 +1,200 @@
+#include "palette/commands/registry.hpp"
+#include "palette/commands/blacktest.hpp"
+#include "palette/commands/color.hpp"
+#include "palette/commands/complementary.hpp"
+#include "palette/commands/scheme.hpp"
+#include "palette/commands/shades.hpp"
+#include "palette/commands/splitcomplementary.hpp"
+#include "palette/commands/tints.hpp"
+#include "palette/commands/websafe.hpp"
+#include "palette/commands/whitetest.hpp"
+
+namespace palette::commands {
+
+static constexpr dpp::snowflake DEV_GUILD_ID = 1470481257530921150;
+
+void register_commands(dpp::cluster &bot) {
+    dpp::slashcommand color("color", "Identify a color via hex/rgb/hsl/cmyk",
+                            bot.me.id);
+    color.add_option(dpp::command_option(dpp::co_string, "hex",
+                                         "Hex like 24B1E0 or #24B1E0", false));
+    color.add_option(dpp::command_option(
+        dpp::co_string, "rgb", "RGB like 0,71,171 or rgb(0,71,171)", false));
+    color.add_option(dpp::command_option(
+        dpp::co_string, "hsl", "HSL like 215,100%,34% or hsl(...)", false));
+    color.add_option(dpp::command_option(
+        dpp::co_string, "cmyk", "CMYK like 100,58,0,33 or cmyk(...)", false));
+
+    dpp::slashcommand complementary("complementary",
+                                    "Find the complementary color", bot.me.id);
+    complementary.add_option(dpp::command_option(
+        dpp::co_string, "hex", "Hex like 24B1E0 or #24B1E0", false));
+    complementary.add_option(dpp::command_option(
+        dpp::co_string, "rgb", "RGB like 0,71,171 or rgb(0,71,171)", false));
+    complementary.add_option(dpp::command_option(
+        dpp::co_string, "hsl", "HSL like 215,100%,34% or hsl(...)", false));
+    complementary.add_option(dpp::command_option(
+        dpp::co_string, "cmyk", "CMYK like 100,58,0,33 or cmyk(...)", false));
+
+    dpp::slashcommand scheme("scheme", "Generate a color scheme from a seed",
+                             bot.me.id);
+    scheme.add_option(dpp::command_option(dpp::co_string, "hex",
+                                          "Hex like 24B1E0 or #24B1E0", true));
+
+    dpp::command_option mode(dpp::co_string, "mode",
+                             "Scheme mode (default: monochrome)", false);
+    mode.add_choice(dpp::command_option_choice("monochrome", "monochrome"));
+    mode.add_choice(
+        dpp::command_option_choice("monochrome-dark", "monochrome-dark"));
+    mode.add_choice(
+        dpp::command_option_choice("monochrome-light", "monochrome-light"));
+    mode.add_choice(dpp::command_option_choice("analogic", "analogic"));
+    mode.add_choice(dpp::command_option_choice("complement", "complement"));
+    mode.add_choice(dpp::command_option_choice("analogic-complement",
+                                               "analogic-complement"));
+    mode.add_choice(dpp::command_option_choice("triad", "triad"));
+    mode.add_choice(dpp::command_option_choice("quad", "quad"));
+    scheme.add_option(mode);
+
+    scheme.add_option(dpp::command_option(
+        dpp::co_integer, "count", "Number of colors to return (1-20)", false));
+
+    dpp::slashcommand shades(
+        "shades", "Generate numbered shades image (toward black)", bot.me.id);
+    shades.add_option(dpp::command_option(
+        dpp::co_integer, "amount", "Number of shades per color (2-8)", true));
+    shades.add_option(dpp::command_option(
+        dpp::co_string, "hex",
+        "Hex list separated by ';' (example: #FF0000; 00AAFF)", false));
+    shades.add_option(dpp::command_option(
+        dpp::co_string, "rgb",
+        "RGB list separated by ';' (example: 255,0,0; rgb(0,128,255))", false));
+    shades.add_option(dpp::command_option(
+        dpp::co_string, "hsl",
+        "HSL list separated by ';' (example: 0,100%,50%; hsl(210,100%,50%))",
+        false));
+    shades.add_option(dpp::command_option(
+        dpp::co_string, "cmyk",
+        "CMYK list separated by ';' (example: 0,100,100,0; cmyk(100,0,0,0))",
+        false));
+
+    dpp::slashcommand tints(
+        "tints", "Generate numbered tints image (toward white)", bot.me.id);
+    tints.add_option(dpp::command_option(
+        dpp::co_integer, "amount", "Number of tints per color (2-8)", true));
+    tints.add_option(dpp::command_option(
+        dpp::co_string, "hex",
+        "Hex list separated by ';' (example: #FF0000; 00AAFF)", false));
+    tints.add_option(dpp::command_option(
+        dpp::co_string, "rgb",
+        "RGB list separated by ';' (example: 255,0,0; rgb(0,128,255))",
+        false));
+    tints.add_option(dpp::command_option(
+        dpp::co_string, "hsl",
+        "HSL list separated by ';' (example: 0,100%,50%; hsl(210,100%,50%))",
+        false));
+    tints.add_option(dpp::command_option(
+        dpp::co_string, "cmyk",
+        "CMYK list separated by ';' (example: 0,100,100,0; cmyk(100,0,0,0))",
+        false));
+
+    dpp::slashcommand splitcomplementary(
+        "splitcomplementary",
+        "Generate a split complementary scheme (3 colors)", bot.me.id);
+    splitcomplementary.add_option(dpp::command_option(
+        dpp::co_string, "hex", "Hex like 24B1E0 or #24B1E0", false));
+    splitcomplementary.add_option(dpp::command_option(
+        dpp::co_string, "rgb", "RGB like 0,71,171 or rgb(0,71,171)", false));
+    splitcomplementary.add_option(dpp::command_option(
+        dpp::co_string, "hsl", "HSL like 215,100%,34% or hsl(...)", false));
+    splitcomplementary.add_option(dpp::command_option(
+        dpp::co_string, "cmyk", "CMYK like 100,58,0,33 or cmyk(...)", false));
+
+    dpp::slashcommand websafe(
+        "websafe", "Compare a color with its nearest web safe color",
+        bot.me.id);
+    websafe.add_option(dpp::command_option(
+        dpp::co_string, "hex", "Hex like 24B1E0 or #24B1E0", false));
+    websafe.add_option(dpp::command_option(
+        dpp::co_string, "rgb", "RGB like 0,71,171 or rgb(0,71,171)", false));
+    websafe.add_option(dpp::command_option(
+        dpp::co_string, "hsl", "HSL like 215,100%,34% or hsl(...)", false));
+    websafe.add_option(dpp::command_option(
+        dpp::co_string, "cmyk", "CMYK like 100,58,0,33 or cmyk(...)", false));
+
+    dpp::slashcommand blacktest(
+        "blacktest", "WCAG contrast test of a color on black background",
+        bot.me.id);
+    blacktest.add_option(dpp::command_option(
+        dpp::co_string, "hex", "Hex like 24B1E0 or #24B1E0", false));
+    blacktest.add_option(dpp::command_option(
+        dpp::co_string, "rgb", "RGB like 0,71,171 or rgb(0,71,171)", false));
+    blacktest.add_option(dpp::command_option(
+        dpp::co_string, "hsl", "HSL like 215,100%,34% or hsl(...)", false));
+    blacktest.add_option(dpp::command_option(
+        dpp::co_string, "cmyk", "CMYK like 100,58,0,33 or cmyk(...)", false));
+
+    dpp::slashcommand whitetest(
+        "whitetest", "WCAG contrast test of a color on white background",
+        bot.me.id);
+    whitetest.add_option(dpp::command_option(
+        dpp::co_string, "hex", "Hex like 24B1E0 or #24B1E0", false));
+    whitetest.add_option(dpp::command_option(
+        dpp::co_string, "rgb", "RGB like 0,71,171 or rgb(0,71,171)", false));
+    whitetest.add_option(dpp::command_option(
+        dpp::co_string, "hsl", "HSL like 215,100%,34% or hsl(...)", false));
+    whitetest.add_option(dpp::command_option(
+        dpp::co_string, "cmyk", "CMYK like 100,58,0,33 or cmyk(...)", false));
+
+    bot.guild_bulk_command_create(
+        {color, complementary, scheme, shades, tints, splitcomplementary,
+         websafe, blacktest, whitetest},
+        DEV_GUILD_ID);
+}
+
+void wire_slashcommands(dpp::cluster &bot) {
+    bot.on_slashcommand([&bot](const dpp::slashcommand_t &event) {
+        const auto &name = event.command.get_command_name();
+
+        if (name == "color") {
+            handle_color(bot, event);
+            return;
+        }
+        if (name == "scheme") {
+            handle_scheme(bot, event);
+            return;
+        }
+        if (name == "complementary") {
+            handle_complementary(bot, event);
+            return;
+        }
+        if (name == "shades") {
+            handle_shades(bot, event);
+            return;
+        }
+        if (name == "tints") {
+            handle_tints(bot, event);
+            return;
+        }
+        if (name == "splitcomplementary") {
+            handle_splitcomplementary(bot, event);
+            return;
+        }
+        if (name == "websafe") {
+            handle_websafe(bot, event);
+            return;
+        }
+        if (name == "blacktest") {
+            handle_blacktest(bot, event);
+            return;
+        }
+        if (name == "whitetest") {
+            handle_whitetest(bot, event);
+            return;
+        }
+        // default fallback
+        event.reply("Unknown command.");
+    });
+}
+
+} // namespace palette::commands
