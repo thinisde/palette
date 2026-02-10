@@ -64,7 +64,15 @@ download_file() {
     local url="$1"
     local out="$2"
     mapfile -t header_args < <(http_header_args)
-    curl -fL "${header_args[@]}" -o "${out}" "${url}"
+    curl -fsSL "${header_args[@]}" -o "${out}" "${url}"
+}
+
+print_service_debug() {
+    local unit="$1"
+    echo "---- systemctl status ${unit} ----" >&2
+    systemctl --no-pager --full status "${unit}" >&2 || true
+    echo "---- journalctl ${unit} (last 80 lines) ----" >&2
+    journalctl --no-pager -n 80 -u "${unit}" >&2 || true
 }
 
 latest_release_json="$(fetch_latest_release_json)"
@@ -136,10 +144,15 @@ ln -sfn "${release_dir}" "${CURRENT_LINK}"
 systemctl daemon-reload
 if ! systemctl restart "${SERVICE_NAME}" || ! systemctl --quiet is-active "${SERVICE_NAME}"; then
     echo "Service restart failed for ${SERVICE_NAME}, attempting rollback." >&2
+    print_service_debug "${SERVICE_NAME}"
     if [[ -n "${previous_target}" && -d "${previous_target}" ]]; then
         ln -sfn "${previous_target}" "${CURRENT_LINK}"
         systemctl daemon-reload
         systemctl restart "${SERVICE_NAME}" || true
+        if ! systemctl --quiet is-active "${SERVICE_NAME}"; then
+            echo "Rollback restart failed for ${SERVICE_NAME}." >&2
+            print_service_debug "${SERVICE_NAME}"
+        fi
     fi
     exit 1
 fi
