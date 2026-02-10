@@ -1,0 +1,175 @@
+name: Build And Release
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Optional explicit semver (example: 1.2.3 or v1.2.3)"
+        required: false
+        type: string
+      bump:
+        description: "Auto-increment strategy when version is empty"
+        required: false
+        default: patch
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    if: github.event_name == 'workflow_dispatch' || startsWith(github.event.head_commit.message, '[MERGE]')
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Resolve Version
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [[ "${GITHUB_EVENT_NAME}" == "workflow_dispatch" ]]; then
+            RAW_VERSION="${{ inputs.version }}"
+            BUMP_KIND="${{ inputs.bump }}"
+          else
+            RAW_VERSION=""
+            BUMP_KIND="patch"
+          fi
+
+          if [[ -n "${RAW_VERSION}" ]]; then
+            if [[ "${RAW_VERSION}" == v* ]]; then
+              TAG="${RAW_VERSION}"
+            else
+              TAG="v${RAW_VERSION}"
+            fi
+          else
+            git fetch --tags --force
+            LATEST_TAG="$(git tag -l 'v*.*.*' --sort=-v:refname | head -n 1)"
+            if [[ -z "${LATEST_TAG}" ]]; then
+              LATEST_TAG="v0.0.0"
+            fi
+
+            CORE="${LATEST_TAG#v}"
+            CORE="${CORE%%[-+]*}"
+
+            IFS='.' read -r MAJOR MINOR PATCH <<< "${CORE}"
+            MAJOR="${MAJOR:-0}"
+            MINOR="${MINOR:-0}"
+            PATCH="${PATCH:-0}"
+
+            case "${BUMP_KIND}" in
+              major)
+                MAJOR=$((MAJOR + 1))
+                MINOR=0
+                PATCH=0
+                ;;
+              minor)
+                MINOR=$((MINOR + 1))
+                PATCH=0
+                ;;
+              patch|*)
+                PATCH=$((PATCH + 1))
+                ;;
+            esac
+
+            TAG="v${MAJOR}.${MINOR}.${PATCH}"
+          fi
+
+          if [[ ! "${TAG}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+([.-][0-9A-Za-z.-]+)?$ ]]; then
+            echo "Invalid version tag: ${TAG}"
+            echo "Expected format: v1.2.3 (optional suffix allowed)"
+            exit 1
+          fi
+
+          VERSION="${TAG#v}"
+          echo "TAG=${TAG}" >> "${GITHUB_ENV}"
+          echo "VERSION=${VERSION}" >> "${GITHUB_ENV}"
+
+      - name: Create And Push Tag
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          if git ls-remote --tags origin "refs/tags/${TAG}" | grep -q "refs/tags/${TAG}$"; then
+            echo "Tag ${TAG} already exists on remote."
+            exit 1
+          fi
+
+          git tag "${TAG}" "${GITHUB_SHA}"
+          git push origin "${TAG}"
+
+      - name: Install Build Dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            ca-certificates \
+            build-essential \
+            cmake \
+            ninja-build \
+            nlohmann-json3-dev \
+            pkg-config \
+            wget
+
+          wget -O /tmp/dpp.deb https://dl.dpp.dev/
+          sudo dpkg -i /tmp/dpp.deb || (sudo apt-get update && sudo apt-get install -y -f && sudo dpkg -i /tmp/dpp.deb)
+          rm -f /tmp/dpp.deb
+
+      - name: Configure
+        run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: cmake --build build --config Release
+
+      - name: Package
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          ARCH="$(uname -m)"
+          case "${ARCH}" in
+            x86_64) ARCH="amd64" ;;
+            aarch64) ARCH="arm64" ;;
+          esac
+
+          PACKAGE_DIR="palette-${VERSION}-linux-${ARCH}"
+          mkdir -p "dist/${PACKAGE_DIR}"
+
+          cp build/palette "dist/${PACKAGE_DIR}/palette"
+          cp LICENSE "dist/${PACKAGE_DIR}/LICENSE"
+
+          tar -C dist -czf "dist/${PACKAGE_DIR}.tar.gz" "${PACKAGE_DIR}"
+          sha256sum "dist/${PACKAGE_DIR}.tar.gz" > "dist/${PACKAGE_DIR}.sha256"
+
+      - name: Upload Build Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: palette-${{ env.VERSION }}-linux
+          path: dist/*
+          if-no-files-found: error
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ env.TAG }}
+          name: Palette ${{ env.TAG }}
+          generate_release_notes: true
+          target_commitish: ${{ github.sha }}
+          files: |
+            dist/*.tar.gz
+            dist/*.sha256
