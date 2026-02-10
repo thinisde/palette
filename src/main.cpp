@@ -1,15 +1,22 @@
 #include "palette/bot.hpp"
+#include "palette/services/env_utils.hpp"
 #include "palette/services/thread_pool.hpp"
 #include <dpp/dpp.h>
 #include <algorithm>
 #include <cstdlib>
 #include <iostream>
+#include <string>
 #include <thread>
 
 int main() {
-    const char *token = std::getenv("DISCORD_TOKEN");
-    if (!token) {
-        std::cerr << "DISCORD_TOKEN not set\n";
+    palette::services::load_dotenv_file();
+
+    const bool production = palette::services::is_production_environment();
+    const std::string token = palette::services::resolve_discord_token();
+    if (token.empty()) {
+        std::cerr << "Discord token not set. Use "
+                     "`DISCORD_TOKEN_DEVELOPMENT`/`DISCORD_TOKEN_PRODUCTION` "
+                     "or fallback `DISCORD_TOKEN`.\n";
         return 1;
     }
 
@@ -24,6 +31,8 @@ int main() {
     dpp::cluster bot(token);
 
     std::cout << "Command worker threads: " << command_pool.size() << "\n";
+    std::cout << "Environment: " << (production ? "production" : "development")
+              << "\n";
 
     palette::wire_listeners(bot, command_pool);
 

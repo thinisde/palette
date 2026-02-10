@@ -8,6 +8,11 @@ services:
     env_file:
       - .env
     environment:
-      DISCORD_TOKEN: ${DISCORD_TOKEN}
+      BOT_ENV: ${BOT_ENV:-development}
+      DISCORD_TOKEN_DEVELOPMENT: ${DISCORD_TOKEN_DEVELOPMENT:-}
+      DISCORD_TOKEN_PRODUCTION: ${DISCORD_TOKEN_PRODUCTION:-}
+      DISCORD_TOKEN: ${DISCORD_TOKEN:-}
+      DISCORD_DEV_GUILD_ID: ${DISCORD_DEV_GUILD_ID:-}
+      DISCORD_GUILD_ID: ${DISCORD_GUILD_ID:-}
       BOT_WORKER_THREADS: ${BOT_WORKER_THREADS:-4}
     restart: unless-stopped

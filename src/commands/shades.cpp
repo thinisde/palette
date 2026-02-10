@@ -1,41 +1,8 @@
 #include "palette/commands/shades.hpp"
 #include "palette/services/color_utils.hpp"
-#include "palette/services/palette_image.hpp"
-#include <string>
-#include <vector>
+#include "palette/services/palette_controls.hpp"
 
 namespace palette::commands {
-namespace {
-std::string format_palette_details(
-    const std::vector<std::vector<services::rgb_color>> &palette) {
-    std::string out;
-    for (size_t row = 0; row < palette.size(); ++row) {
-        const auto &shades = palette[row];
-        if (shades.empty()) {
-            continue;
-        }
-
-        if (palette.size() > 1) {
-            out += "**Color " + std::to_string(row + 1) + "**\n";
-        }
-
-        for (size_t i = 0; i < shades.size(); ++i) {
-            out += std::to_string(i + 1) + ". " + services::rgb_to_hex(shades[i]);
-            if (i == 0) {
-                out += " (original)";
-            } else if (i + 1 == shades.size()) {
-                out += " (black)";
-            }
-            out += "\n";
-        }
-
-        if (row + 1 != palette.size()) {
-            out += "\n";
-        }
-    }
-    return out;
-}
-} // namespace
 
 void handle_shades(dpp::cluster &bot, const dpp::slashcommand_t &event) {
     (void)bot;
@@ -60,23 +27,25 @@ void handle_shades(dpp::cluster &bot, const dpp::slashcommand_t &event) {
         return;
     }
 
-    const services::image_result image =
-        services::generate_color_palette(input.colors, amount);
-    if (image.image_data.empty()) {
-        event.reply("Failed to generate color palette image.");
+    const std::string token = services::create_palette_control_token(
+        services::palette_control_mode::shades, input.colors, amount);
+    if (token.empty()) {
+        event.reply("Failed to initialize shades session.");
         return;
     }
 
-    std::string description = format_palette_details(image.palette);
-    if (description.empty()) {
-        description = "Generated color palette.";
-    } else {
-        description =
-            "A shade is a concept of darkening a color.\n\n" + description;
+    const services::palette_render_result rendered =
+        services::render_palette_with_controls(services::palette_control_mode::shades,
+                                               input.colors, amount);
+    if (!rendered.ok) {
+        event.reply(rendered.error);
+        return;
     }
 
-    dpp::message msg(event.command.channel_id, description);
-    msg.add_file("color-palette.png", image.image_data);
+    dpp::message msg(event.command.channel_id, rendered.description);
+    msg.add_component(services::build_palette_controls_row(
+        services::palette_control_mode::shades, amount, token));
+    msg.add_file("color-palette.png", rendered.image_data);
     event.reply(msg);
 }
 

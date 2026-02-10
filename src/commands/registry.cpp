@@ -8,8 +8,12 @@
 #include "palette/commands/tints.hpp"
 #include "palette/commands/websafe.hpp"
 #include "palette/commands/whitetest.hpp"
+#include "palette/services/env_utils.hpp"
+#include <cstdint>
 #include <functional>
+#include <optional>
 #include <string>
+#include <vector>
 
 namespace palette::commands {
 namespace {
@@ -23,9 +27,41 @@ void dispatch_async(services::thread_pool &pool, dpp::cluster &bot,
         handler(bot, event_copy);
     });
 }
-} // namespace
 
-static constexpr dpp::snowflake DEV_GUILD_ID = 1470481257530921150;
+std::optional<dpp::snowflake> resolve_guild_id_for_registration() {
+    if (const auto id = services::get_env_u64("DISCORD_DEV_GUILD_ID")) {
+        return dpp::snowflake(*id);
+    }
+    if (const auto id = services::get_env_u64("DISCORD_GUILD_ID")) {
+        return dpp::snowflake(*id);
+    }
+    return std::nullopt;
+}
+
+void register_by_environment(dpp::cluster &bot,
+                             const std::vector<dpp::slashcommand> &commands) {
+    if (services::is_production_environment()) {
+        bot.log(dpp::ll_info,
+                "Registering slash commands globally (production mode).");
+        bot.global_bulk_command_create(commands);
+        return;
+    }
+
+    const auto guild_id = resolve_guild_id_for_registration();
+    if (guild_id.has_value()) {
+        bot.log(dpp::ll_info, "Registering slash commands to guild " +
+                                  std::to_string(static_cast<uint64_t>(*guild_id)) +
+                                  " (development mode).");
+        bot.guild_bulk_command_create(commands, *guild_id);
+        return;
+    }
+
+    bot.log(dpp::ll_warning,
+            "Development mode detected but no DISCORD_DEV_GUILD_ID/"
+            "DISCORD_GUILD_ID provided. Falling back to global registration.");
+    bot.global_bulk_command_create(commands);
+}
+} // namespace
 
 void register_commands(dpp::cluster &bot) {
     dpp::slashcommand color("color", "Identify a color via hex/rgb/hsl/cmyk",
@@ -160,10 +196,11 @@ void register_commands(dpp::cluster &bot) {
     whitetest.add_option(dpp::command_option(
         dpp::co_string, "cmyk", "CMYK like 100,58,0,33 or cmyk(...)", false));
 
-    bot.guild_bulk_command_create(
-        {color, complementary, scheme, shades, tints, splitcomplementary,
-         websafe, blacktest, whitetest},
-        DEV_GUILD_ID);
+    const std::vector<dpp::slashcommand> commands = {
+        color, complementary, scheme, shades, tints, splitcomplementary,
+        websafe, blacktest, whitetest};
+
+    register_by_environment(bot, commands);
 }
 
 void wire_slashcommands(dpp::cluster &bot, services::thread_pool &pool) {
