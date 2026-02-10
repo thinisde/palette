@@ -90,12 +90,6 @@ cmake --build build
 ./build/palette
 ```
 
-Or:
-
-```bash
-./run.sh
-```
-
 ## Docker
 
 ```bash
