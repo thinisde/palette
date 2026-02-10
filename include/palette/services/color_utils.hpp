@@ -59,6 +59,7 @@ wcag_contrast_result evaluate_wcag_contrast(rgb_color text,
                                             rgb_color background);
 bool is_web_safe_color(rgb_color value);
 rgb_color nearest_web_safe_color(rgb_color value);
+rgb_color mix_colors(const std::vector<rgb_color> &colors);
 std::string rgb_to_hex(rgb_color value);
 
 } // namespace palette::services

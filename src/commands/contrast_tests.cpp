@@ -1,7 +1,8 @@
-#include "palette/commands/blacktest.hpp"
-#include "palette/commands/whitetest.hpp"
+#include "palette/commands/contrast.hpp"
 #include "palette/services/color_utils.hpp"
 #include "palette/services/palette_image.hpp"
+#include <algorithm>
+#include <cctype>
 #include <iomanip>
 #include <sstream>
 #include <string>
@@ -94,16 +95,34 @@ void handle_contrast_test(const dpp::slashcommand_t &event,
 
     event.reply(msg);
 }
+
+std::string to_lower_ascii(std::string value) {
+    std::transform(
+        value.begin(), value.end(), value.begin(),
+        [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+    return value;
+}
 } // namespace
 
-void handle_blacktest(dpp::cluster &bot, const dpp::slashcommand_t &event) {
+void handle_contrast(dpp::cluster &bot, const dpp::slashcommand_t &event) {
     (void)bot;
-    handle_contrast_test(event, {0, 0, 0}, "Black", true);
-}
 
-void handle_whitetest(dpp::cluster &bot, const dpp::slashcommand_t &event) {
-    (void)bot;
-    handle_contrast_test(event, {255, 255, 255}, "White", false);
+    auto background_param = event.get_parameter("background");
+    std::string background = "black";
+    if (const auto *p = std::get_if<std::string>(&background_param)) {
+        background = to_lower_ascii(*p);
+    }
+
+    if (background == "black") {
+        handle_contrast_test(event, {0, 0, 0}, "Black", true);
+        return;
+    }
+    if (background == "white") {
+        handle_contrast_test(event, {255, 255, 255}, "White", false);
+        return;
+    }
+
+    event.reply("`background` must be `black` or `white`.");
 }
 
 } // namespace palette::commands

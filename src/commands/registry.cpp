@@ -1,13 +1,13 @@
 #include "palette/commands/registry.hpp"
-#include "palette/commands/blacktest.hpp"
 #include "palette/commands/color.hpp"
 #include "palette/commands/complementary.hpp"
+#include "palette/commands/contrast.hpp"
+#include "palette/commands/mix.hpp"
 #include "palette/commands/scheme.hpp"
 #include "palette/commands/shades.hpp"
 #include "palette/commands/splitcomplementary.hpp"
 #include "palette/commands/tints.hpp"
 #include "palette/commands/websafe.hpp"
-#include "palette/commands/whitetest.hpp"
 #include "palette/services/env_utils.hpp"
 #include <cstdint>
 #include <functional>
@@ -49,10 +49,12 @@ void register_by_environment(dpp::cluster &bot,
 
     const auto guild_id = resolve_guild_id_for_registration();
     if (guild_id.has_value()) {
-        bot.log(dpp::ll_info, "Registering slash commands to guild " +
-                                  std::to_string(static_cast<uint64_t>(*guild_id)) +
-                                  " (development mode).");
+        bot.log(dpp::ll_info,
+                "Registering slash commands to guild " +
+                    std::to_string(static_cast<uint64_t>(*guild_id)) +
+                    " (development mode).");
         bot.guild_bulk_command_create(commands, *guild_id);
+        bot.global_bulk_command_create({});
         return;
     }
 
@@ -137,13 +139,28 @@ void register_commands(dpp::cluster &bot) {
         "Hex list separated by ';' (example: #FF0000; 00AAFF)", false));
     tints.add_option(dpp::command_option(
         dpp::co_string, "rgb",
-        "RGB list separated by ';' (example: 255,0,0; rgb(0,128,255))",
-        false));
+        "RGB list separated by ';' (example: 255,0,0; rgb(0,128,255))", false));
     tints.add_option(dpp::command_option(
         dpp::co_string, "hsl",
         "HSL list separated by ';' (example: 0,100%,50%; hsl(210,100%,50%))",
         false));
     tints.add_option(dpp::command_option(
+        dpp::co_string, "cmyk",
+        "CMYK list separated by ';' (example: 0,100,100,0; cmyk(100,0,0,0))",
+        false));
+
+    dpp::slashcommand mix("mix", "Mix up to 3 colors into one", bot.me.id);
+    mix.add_option(dpp::command_option(
+        dpp::co_string, "hex",
+        "Hex list separated by ';' (example: #FF0000; 00AAFF)", false));
+    mix.add_option(dpp::command_option(
+        dpp::co_string, "rgb",
+        "RGB list separated by ';' (example: 255,0,0; rgb(0,128,255))", false));
+    mix.add_option(dpp::command_option(
+        dpp::co_string, "hsl",
+        "HSL list separated by ';' (example: 0,100%,50%; hsl(210,100%,50%))",
+        false));
+    mix.add_option(dpp::command_option(
         dpp::co_string, "cmyk",
         "CMYK list separated by ';' (example: 0,100,100,0; cmyk(100,0,0,0))",
         false));
@@ -160,9 +177,9 @@ void register_commands(dpp::cluster &bot) {
     splitcomplementary.add_option(dpp::command_option(
         dpp::co_string, "cmyk", "CMYK like 100,58,0,33 or cmyk(...)", false));
 
-    dpp::slashcommand websafe(
-        "websafe", "Compare a color with its nearest web safe color",
-        bot.me.id);
+    dpp::slashcommand websafe("websafe",
+                              "Compare a color with its nearest web safe color",
+                              bot.me.id);
     websafe.add_option(dpp::command_option(
         dpp::co_string, "hex", "Hex like 24B1E0 or #24B1E0", false));
     websafe.add_option(dpp::command_option(
@@ -172,33 +189,26 @@ void register_commands(dpp::cluster &bot) {
     websafe.add_option(dpp::command_option(
         dpp::co_string, "cmyk", "CMYK like 100,58,0,33 or cmyk(...)", false));
 
-    dpp::slashcommand blacktest(
-        "blacktest", "WCAG contrast test of a color on black background",
+    dpp::slashcommand contrast(
+        "contrast", "WCAG contrast test on black or white background",
         bot.me.id);
-    blacktest.add_option(dpp::command_option(
+    dpp::command_option contrast_background(
+        dpp::co_string, "background", "Background color to test against", true);
+    contrast_background.add_choice(dpp::command_option_choice("black", "black"));
+    contrast_background.add_choice(dpp::command_option_choice("white", "white"));
+    contrast.add_option(contrast_background);
+    contrast.add_option(dpp::command_option(
         dpp::co_string, "hex", "Hex like 24B1E0 or #24B1E0", false));
-    blacktest.add_option(dpp::command_option(
+    contrast.add_option(dpp::command_option(
         dpp::co_string, "rgb", "RGB like 0,71,171 or rgb(0,71,171)", false));
-    blacktest.add_option(dpp::command_option(
+    contrast.add_option(dpp::command_option(
         dpp::co_string, "hsl", "HSL like 215,100%,34% or hsl(...)", false));
-    blacktest.add_option(dpp::command_option(
-        dpp::co_string, "cmyk", "CMYK like 100,58,0,33 or cmyk(...)", false));
-
-    dpp::slashcommand whitetest(
-        "whitetest", "WCAG contrast test of a color on white background",
-        bot.me.id);
-    whitetest.add_option(dpp::command_option(
-        dpp::co_string, "hex", "Hex like 24B1E0 or #24B1E0", false));
-    whitetest.add_option(dpp::command_option(
-        dpp::co_string, "rgb", "RGB like 0,71,171 or rgb(0,71,171)", false));
-    whitetest.add_option(dpp::command_option(
-        dpp::co_string, "hsl", "HSL like 215,100%,34% or hsl(...)", false));
-    whitetest.add_option(dpp::command_option(
+    contrast.add_option(dpp::command_option(
         dpp::co_string, "cmyk", "CMYK like 100,58,0,33 or cmyk(...)", false));
 
     const std::vector<dpp::slashcommand> commands = {
-        color, complementary, scheme, shades, tints, splitcomplementary,
-        websafe, blacktest, whitetest};
+        color, complementary, scheme, shades, tints,
+        mix,   splitcomplementary, websafe, contrast};
 
     register_by_environment(bot, commands);
 }
@@ -227,6 +237,10 @@ void wire_slashcommands(dpp::cluster &bot, services::thread_pool &pool) {
             dispatch_async(pool, bot, event, handle_tints);
             return;
         }
+        if (name == "mix") {
+            dispatch_async(pool, bot, event, handle_mix);
+            return;
+        }
         if (name == "splitcomplementary") {
             dispatch_async(pool, bot, event, handle_splitcomplementary);
             return;
@@ -235,12 +249,8 @@ void wire_slashcommands(dpp::cluster &bot, services::thread_pool &pool) {
             dispatch_async(pool, bot, event, handle_websafe);
             return;
         }
-        if (name == "blacktest") {
-            dispatch_async(pool, bot, event, handle_blacktest);
-            return;
-        }
-        if (name == "whitetest") {
-            dispatch_async(pool, bot, event, handle_whitetest);
+        if (name == "contrast") {
+            dispatch_async(pool, bot, event, handle_contrast);
             return;
         }
         // default fallback

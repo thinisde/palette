@@ -589,6 +589,34 @@ rgb_color nearest_web_safe_color(rgb_color value) {
     };
 }
 
+rgb_color mix_colors(const std::vector<rgb_color> &colors) {
+    if (colors.empty()) {
+        return {0, 0, 0};
+    }
+
+    int sum_r = 0;
+    int sum_g = 0;
+    int sum_b = 0;
+    for (const rgb_color value : colors) {
+        sum_r += static_cast<int>(value.r);
+        sum_g += static_cast<int>(value.g);
+        sum_b += static_cast<int>(value.b);
+    }
+
+    const int count = static_cast<int>(colors.size());
+    return {
+        static_cast<uint8_t>(std::clamp(static_cast<int>(std::round(
+                                 static_cast<double>(sum_r) / count)),
+                                         0, 255)),
+        static_cast<uint8_t>(std::clamp(static_cast<int>(std::round(
+                                 static_cast<double>(sum_g) / count)),
+                                         0, 255)),
+        static_cast<uint8_t>(std::clamp(static_cast<int>(std::round(
+                                 static_cast<double>(sum_b) / count)),
+                                         0, 255)),
+    };
+}
+
 std::string rgb_to_hex(rgb_color value) {
     return "#" + to_hex_pair(value.r) + to_hex_pair(value.g) + to_hex_pair(value.b);
 }
