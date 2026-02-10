@@ -40,14 +40,18 @@ std::optional<dpp::snowflake> resolve_guild_id_for_registration() {
 
 void register_by_environment(dpp::cluster &bot,
                              const std::vector<dpp::slashcommand> &commands) {
+    const auto guild_id = resolve_guild_id_for_registration();
     if (services::is_production_environment()) {
         bot.log(dpp::ll_info,
                 "Registering slash commands globally (production mode).");
         bot.global_bulk_command_create(commands);
+
+        if (guild_id.has_value()) {
+            bot.guild_bulk_command_create({}, *guild_id);
+        }
         return;
     }
 
-    const auto guild_id = resolve_guild_id_for_registration();
     if (guild_id.has_value()) {
         bot.log(dpp::ll_info,
                 "Registering slash commands to guild " +
@@ -194,8 +198,10 @@ void register_commands(dpp::cluster &bot) {
         bot.me.id);
     dpp::command_option contrast_background(
         dpp::co_string, "background", "Background color to test against", true);
-    contrast_background.add_choice(dpp::command_option_choice("black", "black"));
-    contrast_background.add_choice(dpp::command_option_choice("white", "white"));
+    contrast_background.add_choice(
+        dpp::command_option_choice("black", "black"));
+    contrast_background.add_choice(
+        dpp::command_option_choice("white", "white"));
     contrast.add_option(contrast_background);
     contrast.add_option(dpp::command_option(
         dpp::co_string, "hex", "Hex like 24B1E0 or #24B1E0", false));
@@ -207,7 +213,7 @@ void register_commands(dpp::cluster &bot) {
         dpp::co_string, "cmyk", "CMYK like 100,58,0,33 or cmyk(...)", false));
 
     const std::vector<dpp::slashcommand> commands = {
-        color, complementary, scheme, shades, tints,
+        color, complementary,      scheme,  shades,  tints,
         mix,   splitcomplementary, websafe, contrast};
 
     register_by_environment(bot, commands);
