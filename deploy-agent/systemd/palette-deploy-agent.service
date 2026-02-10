@@ -1,0 +1,12 @@
+[Unit]
+Description=Palette Deploy Agent Poll Job
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+Environment=DEPLOY_AGENT_ENV_FILE=/etc/palette/deploy-agent.env
+ExecStart=/opt/palette/deploy-agent/deploy-agent.sh
+
+[Install]
+WantedBy=multi-user.target

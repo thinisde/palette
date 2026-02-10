@@ -1,0 +1,17 @@
+[Unit]
+Description=Palette Bot Binary Service
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/palette/current
+EnvironmentFile=-/etc/palette/palette.env
+ExecStart=/opt/palette/current/palette
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

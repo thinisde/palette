@@ -1,0 +1,12 @@
+[Unit]
+Description=Run Palette Deploy Agent Poll Job
+
+[Timer]
+OnBootSec=24h
+OnUnitActiveSec=24h
+RandomizedDelaySec=10m
+Persistent=true
+Unit=palette-deploy-agent.service
+
+[Install]
+WantedBy=timers.target
