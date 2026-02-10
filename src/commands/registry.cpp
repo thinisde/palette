@@ -8,8 +8,22 @@
 #include "palette/commands/tints.hpp"
 #include "palette/commands/websafe.hpp"
 #include "palette/commands/whitetest.hpp"
+#include <functional>
+#include <string>
 
 namespace palette::commands {
+namespace {
+using command_handler =
+    std::function<void(dpp::cluster &, const dpp::slashcommand_t &)>;
+
+void dispatch_async(services::thread_pool &pool, dpp::cluster &bot,
+                    const dpp::slashcommand_t &event, command_handler handler) {
+    const dpp::slashcommand_t event_copy = event;
+    pool.enqueue([event_copy, &bot, handler = std::move(handler)]() {
+        handler(bot, event_copy);
+    });
+}
+} // namespace
 
 static constexpr dpp::snowflake DEV_GUILD_ID = 1470481257530921150;
 
@@ -152,48 +166,52 @@ void register_commands(dpp::cluster &bot) {
         DEV_GUILD_ID);
 }
 
-void wire_slashcommands(dpp::cluster &bot) {
-    bot.on_slashcommand([&bot](const dpp::slashcommand_t &event) {
+void wire_slashcommands(dpp::cluster &bot, services::thread_pool &pool) {
+    bot.on_slashcommand([&bot, &pool](const dpp::slashcommand_t &event) {
         const auto &name = event.command.get_command_name();
 
         if (name == "color") {
-            handle_color(bot, event);
+            dispatch_async(pool, bot, event, handle_color);
             return;
         }
         if (name == "scheme") {
-            handle_scheme(bot, event);
+            dispatch_async(pool, bot, event, handle_scheme);
             return;
         }
         if (name == "complementary") {
-            handle_complementary(bot, event);
+            dispatch_async(pool, bot, event, handle_complementary);
             return;
         }
         if (name == "shades") {
-            handle_shades(bot, event);
+            dispatch_async(pool, bot, event, handle_shades);
             return;
         }
         if (name == "tints") {
-            handle_tints(bot, event);
+            dispatch_async(pool, bot, event, handle_tints);
             return;
         }
         if (name == "splitcomplementary") {
-            handle_splitcomplementary(bot, event);
+            dispatch_async(pool, bot, event, handle_splitcomplementary);
             return;
         }
         if (name == "websafe") {
-            handle_websafe(bot, event);
+            dispatch_async(pool, bot, event, handle_websafe);
             return;
         }
         if (name == "blacktest") {
-            handle_blacktest(bot, event);
+            dispatch_async(pool, bot, event, handle_blacktest);
             return;
         }
         if (name == "whitetest") {
-            handle_whitetest(bot, event);
+            dispatch_async(pool, bot, event, handle_whitetest);
             return;
         }
         // default fallback
-        event.reply("Unknown command.");
+        dispatch_async(
+            pool, bot, event,
+            [](dpp::cluster &, const dpp::slashcommand_t &unknown_event) {
+                unknown_event.reply("Unknown command.");
+            });
     });
 }
 

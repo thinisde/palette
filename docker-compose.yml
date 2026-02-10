@@ -9,4 +9,5 @@ services:
       - .env
     environment:
       DISCORD_TOKEN: ${DISCORD_TOKEN}
+      BOT_WORKER_THREADS: ${BOT_WORKER_THREADS:-4}
     restart: unless-stopped

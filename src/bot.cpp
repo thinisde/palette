@@ -4,9 +4,9 @@
 #include "palette/events/ready.hpp"
 
 namespace palette {
-void wire_listeners(dpp::cluster &bot) {
+void wire_listeners(dpp::cluster &bot, services::thread_pool &pool) {
     events::wire_ready(bot);
     events::wire_log(bot);
-    commands::wire_slashcommands(bot);
+    commands::wire_slashcommands(bot, pool);
 }
 } // namespace palette

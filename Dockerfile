@@ -1,4 +1,4 @@
-FROM debian:bookworm AS builder
+FROM ubuntu:24.04 AS builder
 
 ARG DEBIAN_FRONTEND=noninteractive
 
@@ -29,7 +29,7 @@ RUN cmake -S /app -B /app/build \
       -DCMAKE_BUILD_TYPE=Release && \
     cmake --build /app/build
 
-FROM debian:bookworm-slim AS runtime
+FROM ubuntu:24.04 AS runtime
 
 ARG DEBIAN_FRONTEND=noninteractive
 
