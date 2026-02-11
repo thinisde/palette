@@ -1,9 +1,9 @@
 #include "palette/bot.hpp"
 #include "palette/services/env_utils.hpp"
 #include "palette/services/thread_pool.hpp"
-#include <dpp/dpp.h>
 #include <algorithm>
 #include <cstdlib>
+#include <dpp/dpp.h>
 #include <iostream>
 #include <string>
 #include <thread>
@@ -21,11 +21,10 @@ int main() {
     }
 
     const unsigned int hardware_threads = std::thread::hardware_concurrency();
-    const size_t default_workers =
-        std::max<size_t>(2, static_cast<size_t>(hardware_threads == 0 ? 4 : hardware_threads));
-    const size_t worker_count =
-        palette::services::resolve_worker_thread_count("BOT_WORKER_THREADS",
-                                                       default_workers);
+    const size_t default_workers = std::max<size_t>(
+        2, static_cast<size_t>(hardware_threads == 0 ? 4 : hardware_threads));
+    const size_t worker_count = palette::services::resolve_worker_thread_count(
+        "BOT_WORKER_THREADS", default_workers);
     palette::services::thread_pool command_pool(worker_count);
 
     dpp::cluster bot(token);
