@@ -1,27 +1,52 @@
 #include "palette/services/message.hpp"
-#include <cstdlib>
+#include <cstddef>
+#include <random>
+
+std::size_t random_index(std::size_t n) {
+    static std::mt19937 gen{std::random_device{}()};
+    std::uniform_int_distribution<std::size_t> dist(0, n - 1);
+    return dist(gen);
+}
 
 namespace palette::services {
 
 std::string messages[10] = {
-    "Did you know, if you type `\\` and chose Palette, then you will see all "
-    "it's commands?",
-    "Palette is your best friend, when it comes to choosing colors",
-    "You may don't believe me, Palette can test your colors under white and "
-    "black blackground and tell you if it's good!",
-    "Finding complement color is very challenging, but you can do easily with "
-    "Palette!",
-    "Don't forget to test your chosen color to see, if it is websafe.",
-    "With Palette, you can mix colors, like a real artist yk?",
-    "Getting the shades and tints, then generate a palette is what Palette bot "
-    "does.",
-    "Getting colors information directly in discord is something that you have "
-    "never seen!",
-    "Palette is actually a chicken, did you know that?",
-    "Chicken can mix colors with them wings. They are crazy!"};
+    "Did you know? If you type `\\` and select Palette, you can see all "
+    "available commands.",
+    "Palette is your best friend when it comes to choosing the perfect color.",
+    "You might not believe it, but Palette can test your colors on both white "
+    "and black backgrounds to check readability.",
+    "Finding a complementary color can be tricky — Palette makes it "
+    "effortless.",
+    "Don’t forget to test your chosen color to see if it’s web-safe.",
+    "With Palette, you can mix colors like a real artist.",
+    "Generate shades and tints instantly — Palette builds beautiful palettes "
+    "for you.",
+    "Get detailed color information directly inside Discord — no external "
+    "tools needed.",
+    "Fun fact: Palette might secretly be a chicken.",
+    "Even chickens can mix colors with their wings. Wild, right?"};
 
 void add_suggestion(const dpp::slashcommand_t &event) {
-    int rndIdx = rand() % 10;
-    auto user = event.command.get_issuing_user();
+    auto rndIdx = random_index(std::size(messages));
+
+    const std::string suggestion = messages[rndIdx];
+
+    event.get_original_response(
+        [event, suggestion](const dpp::confirmation_callback_t &cc) {
+            if (cc.is_error()) {
+                std::cerr << "get_original_response failed: "
+                          << cc.get_error().message << "\n";
+                return;
+            }
+
+            // On success, cc.value holds a dpp::message
+            const auto &msg = std::get<dpp::message>(cc.value);
+            dpp::message edited = msg;
+            auto embed = dpp::embed().set_description(suggestion);
+            edited.embeds.push_back(embed);
+
+            event.edit_original_response(edited);
+        });
 };
 } // namespace palette::services
