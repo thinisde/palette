@@ -9,11 +9,19 @@
 #include "palette/commands/tints.hpp"
 #include "palette/commands/websafe.hpp"
 #include "palette/services/env_utils.hpp"
+#include "palette/services/message.hpp"
 #include <cstdint>
 #include <functional>
 #include <optional>
+#include <random>
 #include <string>
 #include <vector>
+
+bool one_in_seven() {
+    thread_local std::mt19937 gen{std::random_device{}()};
+    std::uniform_int_distribution<int> dist(0, 6);
+    return dist(gen) == 0;
+}
 
 namespace palette::commands {
 namespace {
@@ -23,8 +31,11 @@ using command_handler =
 void dispatch_async(services::thread_pool &pool, dpp::cluster &bot,
                     const dpp::slashcommand_t &event, command_handler handler) {
     const dpp::slashcommand_t event_copy = event;
-    pool.enqueue([event_copy, &bot, handler = std::move(handler)]() {
+    pool.enqueue([event_copy, &bot, handler = std::move(handler), &pool]() {
         handler(bot, event_copy);
+        if (one_in_seven()) {
+            services::add_suggestion(event_copy);
+        }
     });
 }
 

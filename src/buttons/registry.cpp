@@ -21,11 +21,20 @@ void wire_slashcommands(dpp::cluster &bot, services::thread_pool &pool) {
     bot.on_button_click([&bot, &pool](const dpp::button_click_t &event) {
         const auto &name = event.custom_id;
 
-        if (name.rfind("shades_", 0) == 0) {
+        if (name == "shades_next") {
             dispatch_async(pool, bot, event, handle_shades);
             return;
         }
-        if (name.rfind("tints_", 0) == 0) {
+
+        if (name == "shades_back") {
+            dispatch_async(pool, bot, event, handle_shades);
+            return;
+        }
+        if (name == "tints_next") {
+            dispatch_async(pool, bot, event, handle_tints);
+            return;
+        }
+        if (name == "tints_back") {
             dispatch_async(pool, bot, event, handle_tints);
             return;
         }
