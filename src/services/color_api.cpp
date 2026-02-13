@@ -2,6 +2,7 @@
 #include <algorithm>
 
 namespace palette::services {
+
 namespace {
 std::string clean_hex_code(std::string hex) {
     if (!hex.empty() && hex[0] == '#') {
