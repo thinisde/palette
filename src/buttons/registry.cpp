@@ -2,6 +2,17 @@
 #include "palette/buttons/shades.hpp"
 #include "palette/buttons/tints.hpp"
 #include "palette/services/thread_pool.hpp"
+#include <string_view>
+#include <utility>
+
+inline std::pair<std::string_view, std::string_view>
+split_custom_id(std::string_view custom_id) {
+    const auto pos = custom_id.find(':');
+    if (pos == std::string_view::npos) {
+        return {custom_id, std::string_view{}};
+    }
+    return {custom_id.substr(0, pos), custom_id.substr(pos + 1)};
+}
 
 namespace palette::buttons {
 namespace {

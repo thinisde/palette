@@ -3,8 +3,8 @@
 #include <random>
 
 std::size_t random_index(std::size_t n) {
-    static std::mt19937 gen{std::random_device{}()};
-    std::uniform_int_distribution<std::size_t> dist(0, n - 1);
+    thread_local std::mt19937 gen{std::random_device{}()};
+    thread_local std::uniform_int_distribution<std::size_t> dist(0, n - 1);
     return dist(gen);
 }
 
