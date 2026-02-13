@@ -26,7 +26,7 @@ void dispatch_async(services::thread_pool &pool, dpp::cluster &bot,
     const dpp::slashcommand_t event_copy = event;
     pool.enqueue([event_copy, &bot, handler = std::move(handler), &pool]() {
         handler(bot, event_copy);
-        services::add_suggestion(event_copy);
+        // services::add_suggestion(event_copy);
     });
 }
 
