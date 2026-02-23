@@ -28,7 +28,7 @@ void dispatch_async(services::thread_pool &pool, dpp::cluster &bot,
 }
 } // namespace
 
-void wire_slashcommands(dpp::cluster &bot, services::thread_pool &pool) {
+void wire_buttons(dpp::cluster &bot, services::thread_pool &pool) {
     bot.on_button_click([&bot, &pool](const dpp::button_click_t &event) {
         const auto &name = event.custom_id;
 

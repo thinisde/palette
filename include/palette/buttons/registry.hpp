@@ -3,5 +3,5 @@
 #include <dpp/dpp.h>
 
 namespace palette::buttons {
-void wire_slashcommands(dpp::cluster &bot, services::thread_pool &pool);
+void wire_buttons(dpp::cluster &bot, services::thread_pool &pool);
 } // namespace palette::buttons
