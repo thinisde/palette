@@ -21,8 +21,9 @@ void topgg_post_stats(dpp::cluster &bot) {
 
     bot.request(
         "https://top.gg/api/bots/1470481920100925683/stats", dpp::m_post,
-        [](const dpp::http_request_completion_t &r) {
-            std::cout << "Status: " << r.status << "\n" << r.body << "\n";
+        [&bot](const dpp::http_request_completion_t &r) {
+            bot.log(dpp::ll_info, "Status: " + std::to_string(r.status) + "\n" +
+                                      r.body + "\n");
         },
         body, "application/json", headers, "1.1");
 }

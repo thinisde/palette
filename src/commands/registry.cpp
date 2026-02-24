@@ -2,6 +2,8 @@
 #include "palette/commands/color.hpp"
 #include "palette/commands/complementary.hpp"
 #include "palette/commands/contrast.hpp"
+#include "palette/commands/get_server_count.hpp"
+#include "palette/commands/get_version.hpp"
 #include "palette/commands/mix.hpp"
 #include "palette/commands/scheme.hpp"
 #include "palette/commands/shades.hpp"
@@ -49,8 +51,9 @@ std::optional<dpp::snowflake> resolve_guild_id_for_registration() {
     return std::nullopt;
 }
 
-void register_by_environment(dpp::cluster &bot,
-                             const std::vector<dpp::slashcommand> &commands) {
+void register_by_environment(
+    dpp::cluster &bot, const std::vector<dpp::slashcommand> &commands,
+    const std::vector<dpp::slashcommand> &commands_private) {
     const auto guild_id = resolve_guild_id_for_registration();
     if (services::is_production_environment()) {
         bot.log(dpp::ll_info,
@@ -58,7 +61,7 @@ void register_by_environment(dpp::cluster &bot,
         bot.global_bulk_command_create(commands);
 
         if (guild_id.has_value()) {
-            bot.guild_bulk_command_create({}, *guild_id);
+            bot.guild_bulk_command_create(commands_private, *guild_id);
         }
         return;
     }
@@ -68,15 +71,18 @@ void register_by_environment(dpp::cluster &bot,
                 "Registering slash commands to guild " +
                     std::to_string(static_cast<uint64_t>(*guild_id)) +
                     " (development mode).");
-        bot.guild_bulk_command_create(commands, *guild_id);
+        std::vector<dpp::slashcommand> new_commands = commands;
+        new_commands.insert(new_commands.end(), commands_private.begin(),
+                            commands_private.end());
+        bot.guild_bulk_command_create(new_commands, *guild_id);
         bot.global_bulk_command_create({});
         return;
     }
 
-    bot.log(dpp::ll_warning,
+    bot.log(dpp::ll_error,
             "Development mode detected but no DISCORD_DEV_GUILD_ID/"
             "DISCORD_GUILD_ID provided. Falling back to global registration.");
-    bot.global_bulk_command_create(commands);
+    // bot.global_bulk_command_create(commands);
 }
 } // namespace
 
@@ -227,7 +233,16 @@ void register_commands(dpp::cluster &bot) {
         color, complementary,      scheme,  shades,  tints,
         mix,   splitcomplementary, websafe, contrast};
 
-    register_by_environment(bot, commands);
+    dpp::slashcommand get_version("get_version", "Get palette's version",
+                                  bot.me.id);
+
+    dpp::slashcommand get_server_count("get_server_count",
+                                       "Get palette's server count", bot.me.id);
+
+    const std::vector<dpp::slashcommand> commands_private = {get_version,
+                                                             get_server_count};
+
+    register_by_environment(bot, commands, commands_private);
 }
 
 void wire_slashcommands(dpp::cluster &bot, services::thread_pool &pool) {
@@ -268,6 +283,14 @@ void wire_slashcommands(dpp::cluster &bot, services::thread_pool &pool) {
         }
         if (name == "contrast") {
             dispatch_async(pool, bot, event, handle_contrast);
+            return;
+        }
+        if (name == "get_version") {
+            dispatch_async(pool, bot, event, handle_get_version);
+            return;
+        }
+        if (name == "get_server_count") {
+            dispatch_async(pool, bot, event, handle_get_server_count);
             return;
         }
         // default fallback
