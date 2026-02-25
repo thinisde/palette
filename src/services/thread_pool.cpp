@@ -40,23 +40,24 @@ struct thread_pool::impl {
 thread_pool::thread_pool(size_t thread_count) : state_(new impl{}) {
     const size_t resolved = std::max<size_t>(1, thread_count);
     state_->workers.reserve(resolved);
+    impl *const state = state_;
 
     for (size_t i = 0; i < resolved; ++i) {
-        state_->workers.emplace_back([this]() {
+        state_->workers.emplace_back([state]() {
             while (true) {
                 std::function<void()> task;
                 {
-                    std::unique_lock<std::mutex> lock(state_->mutex);
-                    state_->cv.wait(lock, [this]() {
-                        return state_->stopping || !state_->tasks.empty();
+                    std::unique_lock<std::mutex> lock(state->mutex);
+                    state->cv.wait(lock, [state]() {
+                        return state->stopping || !state->tasks.empty();
                     });
 
-                    if (state_->stopping && state_->tasks.empty()) {
+                    if (state->stopping && state->tasks.empty()) {
                         return;
                     }
 
-                    task = std::move(state_->tasks.front());
-                    state_->tasks.pop();
+                    task = std::move(state->tasks.front());
+                    state->tasks.pop();
                 }
 
                 try {
