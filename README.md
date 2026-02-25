@@ -1,6 +1,6 @@
 # Palette
 
-`Palette` is a C++20 Discord bot (D++) for color analysis and palette generation. It supports multiple color models, produces PNG palette images, and includes release/deployment automation for server operations.
+`Palette` is a Discord bot (D++) for color analysis and palette generation. It supports multiple color models, produces PNG palette images, and includes release/deployment automation for server operations.
 
 ## Features
 
