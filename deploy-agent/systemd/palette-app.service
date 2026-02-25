@@ -7,6 +7,7 @@ Wants=network-online.target
 Type=simple
 WorkingDirectory=/opt/palette/current
 EnvironmentFile=-/etc/palette/palette.env
+Environment=LD_LIBRARY_PATH=/opt/palette/current
 ExecStart=/opt/palette/current/palette
 Restart=on-failure
 RestartSec=5

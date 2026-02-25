@@ -133,6 +133,12 @@ fi
 
 install -m 0755 "${extracted_binary}" "${release_dir}/${BINARY_NAME}"
 
+# Copy bundled shared libraries (if present) next to the executable so
+# the systemd unit can load them from /opt/palette/current.
+while IFS= read -r -d '' bundled_lib; do
+    cp -a "${bundled_lib}" "${release_dir}/"
+done < <(find "${release_dir}" -mindepth 2 -name '*.so*' \( -type f -o -type l \) -print0)
+
 # Keep an app env symlink inside each release for easier service introspection.
 if [[ -f "${APP_ENV_FILE}" ]]; then
     ln -sfn "${APP_ENV_FILE}" "${release_dir}/.env"
