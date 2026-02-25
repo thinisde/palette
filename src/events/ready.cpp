@@ -8,7 +8,7 @@ void wire_ready(dpp::cluster &bot, topgg::client &topgg) {
         const bool production = palette::services::is_production_environment();
 
         if (production) {
-            topgg.start_autoposter();
+            // topgg.start_autoposter();
         }
 
         if (dpp::run_once<struct register_commands_once>()) {

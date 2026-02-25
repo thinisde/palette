@@ -19,8 +19,6 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(topgg_cpp_sdk)
 
-# Enable coroutine support in the Top.gg SDK (optional)
-# (Their CMake option is ENABLE_CORO, not DENABLE_CORO)
 set(ENABLE_CORO ON CACHE BOOL "Enable coroutines in topgg SDK" FORCE)
 
 add_executable(${PROJECT_NAME} ${SOURCES})
