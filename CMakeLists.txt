@@ -10,17 +10,6 @@ file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS
     "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp"
 )
 
-# --- Fetch Top.gg C++ SDK ---
-include(FetchContent)
-FetchContent_Declare(
-    topgg_cpp_sdk
-    GIT_REPOSITORY https://github.com/Top-gg-Community/cpp-sdk.git
-    GIT_TAG main
-)
-FetchContent_MakeAvailable(topgg_cpp_sdk)
-
-set(ENABLE_CORO ON CACHE BOOL "Enable coroutines in topgg SDK" FORCE)
-
 add_executable(${PROJECT_NAME} ${SOURCES})
 
 find_package(DPP REQUIRED)
@@ -41,11 +30,6 @@ target_link_directories(${PROJECT_NAME} PRIVATE
 target_link_libraries(${PROJECT_NAME} PRIVATE
     ${DPP_LIBRARIES}
     dpp
-    topgg            # <-- THIS is the correct CMake target name
-)
-
-target_include_directories(topgg PUBLIC
-    ${topgg_cpp_sdk_SOURCE_DIR}/include
 )
 
 set_target_properties(${PROJECT_NAME} PROPERTIES
