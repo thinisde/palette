@@ -1,4 +1,5 @@
 # Palette
+[![wakatime](https://wakatime.com/badge/user/4afa9149-7101-4ea6-8fa0-255a4d5fe334/project/a6d95144-41f0-41cc-a6f1-00874e856cf3.svg)](https://wakatime.com/badge/user/4afa9149-7101-4ea6-8fa0-255a4d5fe334/project/a6d95144-41f0-41cc-a6f1-00874e856cf3)
 
 `Palette` is a Discord bot (D++) for color analysis and palette generation. It supports multiple color models, produces PNG palette images, and includes release/deployment automation for server operations.
 
