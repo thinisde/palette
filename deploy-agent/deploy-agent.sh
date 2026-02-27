@@ -26,9 +26,8 @@ STATE_DIR="${STATE_DIR:-/var/lib/palette-deploy-agent}"
 SERVICE_NAME="${SERVICE_NAME:-palette-app.service}"
 BINARY_NAME="${BINARY_NAME:-palette}"
 APP_ENV_FILE="${APP_ENV_FILE:-/etc/palette/palette.env}"
-SYSTEM_LIB_DIR="${SYSTEM_LIB_DIR:-/lib}"
 
-mkdir -p "${INSTALL_ROOT}" "${RELEASES_DIR}" "${STATE_DIR}" "${SYSTEM_LIB_DIR}"
+mkdir -p "${INSTALL_ROOT}" "${RELEASES_DIR}" "${STATE_DIR}"
 
 CURRENT_TAG_FILE="${STATE_DIR}/current_tag"
 
@@ -133,11 +132,6 @@ if [[ -z "${extracted_binary}" ]]; then
 fi
 
 install -m 0755 "${extracted_binary}" "${release_dir}/${BINARY_NAME}"
-
-# Install bundled libtopgg shared libraries into the system library path.
-while IFS= read -r -d '' bundled_lib; do
-    cp -a "${bundled_lib}" "${SYSTEM_LIB_DIR}/"
-done < <(find "${release_dir}" -mindepth 2 -name 'libtopgg.so*' \( -type f -o -type l \) -print0)
 
 # Keep an app env symlink inside each release for easier service introspection.
 if [[ -f "${APP_ENV_FILE}" ]]; then

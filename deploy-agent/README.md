@@ -10,9 +10,8 @@ It does the following:
 4. Verifies checksum.
 5. Deploys release into versioned folders.
 6. Updates `/opt/palette/current` symlink.
-7. Installs bundled `libtopgg.so*` from the release `lib/` folder into `/lib` (configurable).
-8. Restarts app via systemd service.
-9. Rolls back symlink if restart fails.
+7. Restarts app via systemd service.
+8. Rolls back symlink if restart fails.
 
 ## Files
 
@@ -64,7 +63,6 @@ Set optional:
 
 - `GITHUB_TOKEN` (recommended for private repos/rate limits)
 - path overrides and service name
-- `SYSTEM_LIB_DIR` (defaults to `/lib`, target directory for bundled `libtopgg.so*`)
 
 2. Edit app env file:
 
@@ -107,17 +105,14 @@ sudo journalctl -u palette-app.service -f
 - Releases: `/opt/palette/releases/<tag>`
 - Current symlink: `/opt/palette/current`
 - State: `/var/lib/palette-deploy-agent/current_tag`
-- Bundled library install target: `/lib` (override with `SYSTEM_LIB_DIR`)
 
 Release archive contents (example):
 
 - `palette`
-- `lib/libtopgg.so*`
 - `LICENSE`
 
 ## Notes
 
 - App service reads env from `/etc/palette/palette.env`.
 - Deploy agent reads env from `/etc/palette/deploy-agent.env`.
-- Deploy agent copies bundled `libtopgg.so*` from the extracted release `lib/` folder into `SYSTEM_LIB_DIR` before restarting the service.
 - Timer default interval is every 24 hours.
