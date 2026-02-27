@@ -148,15 +148,9 @@ jobs:
           esac
 
           PACKAGE_DIR="palette-${VERSION}-linux-${ARCH}"
-          mkdir -p "dist/${PACKAGE_DIR}/lib"
+          mkdir -p "dist/${PACKAGE_DIR}"
 
           cp build/palette "dist/${PACKAGE_DIR}/palette"
-          mapfile -t TOPGG_LIBS < <(find build \( -type f -o -type l \) -name 'libtopgg.so*' | sort)
-          if [[ "${#TOPGG_LIBS[@]}" -eq 0 ]]; then
-            echo "Could not find libtopgg.so in build output." >&2
-            exit 1
-          fi
-          cp -a "${TOPGG_LIBS[@]}" "dist/${PACKAGE_DIR}/lib/"
           cp LICENSE "dist/${PACKAGE_DIR}/LICENSE"
 
           tar -C dist -czf "dist/${PACKAGE_DIR}.tar.gz" "${PACKAGE_DIR}"
