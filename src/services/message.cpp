@@ -8,8 +8,6 @@ std::size_t random_index(std::size_t n) {
     return dist(gen);
 }
 
-namespace palette::services {
-
 std::string messages[10] = {
     "Did you know? If you type `\\` and select Palette, you can see all "
     "available commands.",
@@ -26,6 +24,8 @@ std::string messages[10] = {
     "tools needed.",
     "Fun fact: Palette might secretly be a chicken.",
     "Even chickens can mix colors with their wings. Wild, right?"};
+
+namespace palette::services {
 
 void add_suggestion(const dpp::slashcommand_t &event) {
     auto rndIdx = random_index(std::size(messages));
@@ -49,4 +49,8 @@ void add_suggestion(const dpp::slashcommand_t &event) {
             event.edit_original_response(edited);
         });
 };
+void send_ratelimited(const dpp::slashcommand_t &event) {
+    event.reply(dpp::embed().set_description(
+        "Please slow down... chill out a little bit!"));
+}
 } // namespace palette::services

@@ -12,6 +12,7 @@
 #include "palette/commands/websafe.hpp"
 #include "palette/services/env_utils.hpp"
 #include "palette/services/message.hpp"
+#include "palette/services/ratelimit.hpp"
 #include <cstdint>
 #include <functional>
 #include <optional>
@@ -30,10 +31,29 @@ namespace {
 using command_handler =
     std::function<void(dpp::cluster &, const dpp::slashcommand_t &)>;
 
+std::string format_command_options(const std::string &command_name,
+                                   const command_option_t &options) {
+    return "Command options for `" + command_name +
+           "` => isPrivate=" + (options.isPrivate ? "true" : "false") +
+           ", isWhitelist=" + (options.isWhitelist ? "true" : "false") +
+           ", requiredVote=" + (options.requiredVote ? "true" : "false") +
+           ", ratelimit=" + std::to_string(options.ratelimit);
+}
+
 void dispatch_async(services::thread_pool &pool, dpp::cluster &bot,
-                    const dpp::slashcommand_t &event, command_handler handler) {
+                    const dpp::slashcommand_t &event,
+                    const command_option_t &options, command_handler handler) {
     const dpp::slashcommand_t event_copy = event;
-    pool.enqueue([event_copy, &bot, handler = std::move(handler)]() {
+    const std::string options_log =
+        format_command_options(event.command.get_command_name(), options);
+    pool.enqueue([event_copy, &bot, options, handler = std::move(handler)]() {
+        bool is_ratelimited = palette::services::is_ratelimited(
+            event_copy.command.usr.id, int64_t(options.ratelimit));
+        bot.log(dpp::ll_info, std::to_string(options.ratelimit));
+        if (is_ratelimited) {
+            services::send_ratelimited(event_copy);
+            return;
+        }
         handler(bot, event_copy);
         if (one_in_seven()) {
             services::add_suggestion(event_copy);
@@ -250,52 +270,68 @@ void wire_slashcommands(dpp::cluster &bot, services::thread_pool &pool) {
         const auto &name = event.command.get_command_name();
 
         if (name == "color") {
-            dispatch_async(pool, bot, event, handle_color);
+            dispatch_async(pool, bot, event, color_command_options,
+                           handle_color);
             return;
         }
         if (name == "scheme") {
-            dispatch_async(pool, bot, event, handle_scheme);
+            dispatch_async(pool, bot, event, scheme_command_options,
+                           handle_scheme);
             return;
         }
         if (name == "complementary") {
-            dispatch_async(pool, bot, event, handle_complementary);
+            dispatch_async(pool, bot, event, complementary_command_options,
+                           handle_complementary);
             return;
         }
         if (name == "shades") {
-            dispatch_async(pool, bot, event, handle_shades);
+            dispatch_async(pool, bot, event, shades_command_options,
+                           handle_shades);
             return;
         }
         if (name == "tints") {
-            dispatch_async(pool, bot, event, handle_tints);
+            dispatch_async(pool, bot, event, tints_command_options,
+                           handle_tints);
             return;
         }
         if (name == "mix") {
-            dispatch_async(pool, bot, event, handle_mix);
+            dispatch_async(pool, bot, event, mix_command_options, handle_mix);
             return;
         }
         if (name == "splitcomplementary") {
-            dispatch_async(pool, bot, event, handle_splitcomplementary);
+            dispatch_async(pool, bot, event, splitcomplementary_command_options,
+                           handle_splitcomplementary);
             return;
         }
         if (name == "websafe") {
-            dispatch_async(pool, bot, event, handle_websafe);
+            dispatch_async(pool, bot, event, websafe_command_options,
+                           handle_websafe);
             return;
         }
         if (name == "contrast") {
-            dispatch_async(pool, bot, event, handle_contrast);
+            dispatch_async(pool, bot, event, contrast_command_options,
+                           handle_contrast);
             return;
         }
         if (name == "get_version") {
-            dispatch_async(pool, bot, event, handle_get_version);
+            dispatch_async(pool, bot, event, get_version_command_options,
+                           handle_get_version);
             return;
         }
         if (name == "get_server_count") {
-            dispatch_async(pool, bot, event, handle_get_server_count);
+            dispatch_async(pool, bot, event, get_server_count_command_options,
+                           handle_get_server_count);
             return;
         }
         // default fallback
+        constexpr command_option_t unknown_command_options{
+            .isPrivate = false,
+            .isWhitelist = false,
+            .requiredVote = false,
+            .ratelimit = 0,
+        };
         dispatch_async(
-            pool, bot, event,
+            pool, bot, event, unknown_command_options,
             [](dpp::cluster &, const dpp::slashcommand_t &unknown_event) {
                 unknown_event.reply("Unknown command.");
             });
